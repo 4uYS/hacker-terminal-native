@@ -1,0 +1,395 @@
+/*
+ * 本地数据库模块
+ * 
+ * 轻量级键值存储，基于文件系统
+ * 支持表、键值对、简单查询
+ */
+
+#include "hacker.h"
+
+// 数据库表类型
+typedef enum {
+    TABLE_PLUGINS = 0,    // 插件表
+    TABLE_SETTINGS,       // 设置表
+    TABLE_CACHE,          // 缓存表
+    TABLE_COUNT
+} TableType;
+
+// 数据库记录
+typedef struct {
+    TCHAR key[128];
+    TCHAR* value;
+    int value_len;
+    struct DBRecord* next;
+} DBRecord;
+
+// 数据库表
+typedef struct {
+    TCHAR name[64];
+    DBRecord* head;
+    int count;
+} DBTable;
+
+static DBTable g_tables[TABLE_COUNT];
+static TCHAR g_db_dir[MAX_PATH];
+static BOOL g_db_inited = FALSE;
+
+// 获取表名
+static LPCTSTR GetTableName(TableType type) {
+    switch (type) {
+        case TABLE_PLUGINS:  return _T("plugins");
+        case TABLE_SETTINGS: return _T("settings");
+        case TABLE_CACHE:    return _T("cache");
+        default:             return _T("unknown");
+    }
+}
+
+// 获取表文件路径
+static void GetTablePath(TableType type, TCHAR* path, int max_len) {
+    _stprintf(path, _T("%s\\%s.db"), g_db_dir, GetTableName(type));
+}
+
+// 初始化数据库
+BOOL InitDatabase() {
+    if (g_db_inited) return TRUE;
+    
+    // 获取数据库目录
+    _stprintf(g_db_dir, _T("%s\\database"), g_config_dir);
+    EnsureDirExists(g_db_dir);
+    
+    // 初始化表
+    for (int i = 0; i < TABLE_COUNT; i++) {
+        ZeroMemory(&g_tables[i], sizeof(DBTable));
+        _tcscpy(g_tables[i].name, GetTableName((TableType)i));
+        g_tables[i].head = NULL;
+        g_tables[i].count = 0;
+    }
+    
+    // 加载所有表
+    for (int i = 0; i < TABLE_COUNT; i++) {
+        // 从文件加载
+        TCHAR path[MAX_PATH];
+        GetTablePath((TableType)i, path, MAX_PATH);
+        
+        HANDLE hFile = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL, 
+                                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        if (hFile == INVALID_HANDLE_VALUE) {
+            continue;  // 文件不存在，跳过
+        }
+        
+        // 读取文件内容
+        LARGE_INTEGER fileSize;
+        GetFileSizeEx(hFile, &fileSize);
+        
+        if (fileSize.QuadPart > 0) {
+            char* buffer = (char*)malloc(fileSize.QuadPart + 1);
+            if (buffer) {
+                DWORD bytesRead;
+                ReadFile(hFile, buffer, (DWORD)fileSize.QuadPart, &bytesRead, NULL);
+                buffer[bytesRead] = 0;
+                
+                // 解析简单的格式：key=value\n
+                char* line = buffer;
+                char* next_line;
+                
+                while (line && *line) {
+                    next_line = strchr(line, '\n');
+                    if (next_line) {
+                        *next_line = 0;
+                        next_line++;
+                    }
+                    
+                    // 跳过空行和注释
+                    if (*line == 0 || *line == '#') {
+                        line = next_line;
+                        continue;
+                    }
+                    
+                    // 解析 key=value
+                    char* eq = strchr(line, '=');
+                    if (eq) {
+                        *eq = 0;
+                        
+                        // 转换为 TCHAR
+                        TCHAR key[128];
+                        TCHAR* value;
+                        
+                        MultiByteToWideChar(CP_UTF8, 0, line, -1, key, 128);
+                        
+                        int value_len = strlen(eq + 1);
+                        value = (TCHAR*)malloc((value_len + 1) * sizeof(TCHAR));
+                        MultiByteToWideChar(CP_UTF8, 0, eq + 1, -1, value, value_len + 1);
+                        
+                        // 添加到表
+                        DBRecord* record = (DBRecord*)malloc(sizeof(DBRecord));
+                        ZeroMemory(record, sizeof(DBRecord));
+                        _tcscpy(record->key, key);
+                        record->value = value;
+                        record->value_len = value_len;
+                        record->next = NULL;
+                        
+                        if (g_tables[i].head == NULL) {
+                            g_tables[i].head = record;
+                        } else {
+                            DBRecord* curr = g_tables[i].head;
+                            while (curr->next) curr = (DBRecord*)curr->next;
+                            curr->next = (struct DBRecord*)record;
+                        }
+                        g_tables[i].count++;
+                    }
+                    
+                    line = next_line;
+                }
+                
+                free(buffer);
+            }
+        }
+        
+        CloseHandle(hFile);
+    }
+    
+    g_db_inited = TRUE;
+    return TRUE;
+}
+
+// 保存表到文件
+static BOOL SaveTable(TableType type) {
+    TCHAR path[MAX_PATH];
+    GetTablePath(type, path, MAX_PATH);
+    
+    HANDLE hFile = CreateFile(path, GENERIC_WRITE, 0, NULL, 
+                              CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        return FALSE;
+    }
+    
+    // 写入表头注释
+    char header[256];
+    sprintf(header, "# %s database table\n# Auto-generated by Hacker Terminal\n\n", 
+            GetTableName(type));
+    DWORD bytesWritten;
+    WriteFile(hFile, header, (DWORD)strlen(header), &bytesWritten, NULL);
+    
+    // 写入所有记录
+    DBRecord* record = g_tables[type].head;
+    while (record) {
+        // 转换 key 为 UTF-8
+        char key_utf8[256];
+        WideCharToMultiByte(CP_UTF8, 0, record->key, -1, key_utf8, 256, NULL, NULL);
+        
+        // 转换 value 为 UTF-8
+        char* value_utf8 = NULL;
+        if (record->value) {
+            int len = WideCharToMultiByte(CP_UTF8, 0, record->value, -1, NULL, 0, NULL, NULL);
+            value_utf8 = (char*)malloc(len);
+            WideCharToMultiByte(CP_UTF8, 0, record->value, -1, value_utf8, len, NULL, NULL);
+        }
+        
+        // 写入行
+        char line[512];
+        if (value_utf8) {
+            sprintf(line, "%s=%s\n", key_utf8, value_utf8);
+        } else {
+            sprintf(line, "%s=\n", key_utf8);
+        }
+        WriteFile(hFile, line, (DWORD)strlen(line), &bytesWritten, NULL);
+        
+        if (value_utf8) free(value_utf8);
+        
+        record = (DBRecord*)record->next;
+    }
+    
+    CloseHandle(hFile);
+    return TRUE;
+}
+
+// 保存所有表
+BOOL SaveDatabase() {
+    if (!g_db_inited) return FALSE;
+    
+    for (int i = 0; i < TABLE_COUNT; i++) {
+        SaveTable((TableType)i);
+    }
+    
+    return TRUE;
+}
+
+// 获取值
+LPCTSTR DBGetValue(TableType table, LPCTSTR key) {
+    if (!g_db_inited) return NULL;
+    
+    DBRecord* record = g_tables[table].head;
+    while (record) {
+        if (_tcscmp(record->key, key) == 0) {
+            return record->value;
+        }
+        record = (DBRecord*)record->next;
+    }
+    
+    return NULL;
+}
+
+// 设置值
+BOOL DBSetValue(TableType table, LPCTSTR key, LPCTSTR value) {
+    if (!g_db_inited) return FALSE;
+    
+    // 查找现有记录
+    DBRecord* record = g_tables[table].head;
+    while (record) {
+        if (_tcscmp(record->key, key) == 0) {
+            // 更新值
+            if (record->value) {
+                free(record->value);
+            }
+            record->value = StrDup(value);
+            record->value_len = _tcslen(value);
+            SaveTable(table);
+            return TRUE;
+        }
+        record = (DBRecord*)record->next;
+    }
+    
+    // 创建新记录
+    record = (DBRecord*)malloc(sizeof(DBRecord));
+    ZeroMemory(record, sizeof(DBRecord));
+    _tcscpy(record->key, key);
+    record->value = StrDup(value);
+    record->value_len = _tcslen(value);
+    record->next = NULL;
+    
+    if (g_tables[table].head == NULL) {
+        g_tables[table].head = record;
+    } else {
+        DBRecord* curr = g_tables[table].head;
+        while (curr->next) curr = (DBRecord*)curr->next;
+        curr->next = (struct DBRecord*)record;
+    }
+    g_tables[table].count++;
+    
+    SaveTable(table);
+    return TRUE;
+}
+
+// 删除键
+BOOL DBDeleteKey(TableType table, LPCTSTR key) {
+    if (!g_db_inited) return FALSE;
+    
+    DBRecord* prev = NULL;
+    DBRecord* record = g_tables[table].head;
+    
+    while (record) {
+        if (_tcscmp(record->key, key) == 0) {
+            if (prev) {
+                prev->next = record->next;
+            } else {
+                g_tables[table].head = (DBRecord*)record->next;
+            }
+            
+            if (record->value) free(record->value);
+            free(record);
+            g_tables[table].count--;
+            
+            SaveTable(table);
+            return TRUE;
+        }
+        
+        prev = record;
+        record = (DBRecord*)record->next;
+    }
+    
+    return FALSE;
+}
+
+// 检查键是否存在
+BOOL DBKeyExists(TableType table, LPCTSTR key) {
+    return DBGetValue(table, key) != NULL;
+}
+
+// 获取表记录数
+int DBGetRecordCount(TableType table) {
+    if (!g_db_inited) return 0;
+    return g_tables[table].count;
+}
+
+// 获取所有键（返回逗号分隔的字符串）
+LPCTSTR DBGetAllKeys(TableType table) {
+    static TCHAR result[8192];
+    result[0] = 0;
+    
+    if (!g_db_inited) return result;
+    
+    DBRecord* record = g_tables[table].head;
+    while (record) {
+        if (_tcslen(result) > 0) {
+            _tcscat(result, _T(","));
+        }
+        _tcscat(result, record->key);
+        record = (DBRecord*)record->next;
+    }
+    
+    return result;
+}
+
+// 清空表
+BOOL DBClearTable(TableType table) {
+    if (!g_db_inited) return FALSE;
+    
+    DBRecord* record = g_tables[table].head;
+    while (record) {
+        DBRecord* next = (DBRecord*)record->next;
+        if (record->value) free(record->value);
+        free(record);
+        record = next;
+    }
+    
+    g_tables[table].head = NULL;
+    g_tables[table].count = 0;
+    
+    SaveTable(table);
+    return TRUE;
+}
+
+// 关闭数据库
+void CloseDatabase() {
+    if (!g_db_inited) return;
+    
+    // 保存所有表
+    SaveDatabase();
+    
+    // 释放内存
+    for (int i = 0; i < TABLE_COUNT; i++) {
+        DBRecord* record = g_tables[i].head;
+        while (record) {
+            DBRecord* next = (DBRecord*)record->next;
+            if (record->value) free(record->value);
+            free(record);
+            record = next;
+        }
+        g_tables[i].head = NULL;
+        g_tables[i].count = 0;
+    }
+    
+    g_db_inited = FALSE;
+}
+
+// 获取数据库信息文本
+LPCTSTR GetDatabaseInfoText() {
+    static TCHAR info[2048];
+    
+    _stprintf(info, 
+        _T("数据库状态: %s\n\n")
+        _T("数据库目录: %s\n\n")
+        _T("表统计:\n")
+        _T("  - plugins 表: %d 条记录\n")
+        _T("  - settings 表: %d 条记录\n")
+        _T("  - cache 表: %d 条记录\n\n")
+        _T("存储格式: 纯文本键值对 (.db)\n")
+        _T("编码: UTF-8\n"),
+        g_db_inited ? _T("运行中") : _T("未初始化"),
+        g_db_dir,
+        DBGetRecordCount(TABLE_PLUGINS),
+        DBGetRecordCount(TABLE_SETTINGS),
+        DBGetRecordCount(TABLE_CACHE));
+    
+    return info;
+}

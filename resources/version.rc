@@ -1,0 +1,32 @@
+// version.rc - 版本资源文件
+
+#include <windows.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION 1,0,0,0
+PRODUCTVERSION 1,0,0,0
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "080404b0"
+        BEGIN
+            VALUE "CompanyName", "爱折腾实验室 · 豆包 AI Agent Lab"
+            VALUE "FileDescription", "Hacker Terminal - 终端AI助手"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "HackerTerminal"
+            VALUE "LegalCopyright", "Copyright (C) 2026 爱折腾实验室"
+            VALUE "OriginalFilename", "HackerTerminal.exe"
+            VALUE "ProductName", "Hacker Terminal"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x804, 1200
+    END
+END
