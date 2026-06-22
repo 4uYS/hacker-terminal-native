@@ -1,28 +1,66 @@
 # Hacker Terminal v2.1 (原生 Win32 x64 版)
 
-> 爱折腾实验室 · 豆包 AI Agent Lab 出品
+> 专为终端折腾打造的 AI 助手
 
-专为终端折腾打造的 AI 助手，纯原生 Win32 API 实现，零第三方库依赖。
+<div align="center">
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Language: C](https://img.shields.io/badge/Language-C-blue.svg)](https://en.wikipedia.org/wiki/C_(programming_language))
+[![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D4.svg)]()
+[![Version: v2.1](https://img.shields.io/badge/Version-v2.1-orange.svg)]()
+
+[English](README.en.md) | [中文](README.md)
+
+</div>
+
+---
+
+## 📖 项目简介
+
+Hacker Terminal 是一款专为终端折腾打造的 AI 助手，采用纯原生 Win32 API 实现，零第三方库依赖。它将 AI 能力与终端操作完美结合，支持 Shell 命令执行、GUI 模拟操作、技能系统、插件扩展等丰富功能。
+
+### 为什么选择 Hacker Terminal？
+
+- 🚀 **零依赖**：纯 Win32 API 实现，不依赖任何第三方库
+- 💻 **超轻量**：单文件 exe，体积仅 ~250KB
+- 🎨 **Hacker 风格**：终端彩色输出，酷炫界面
+- 🔒 **安全可控**：0-10 级权限控制，危险命令检测
+- 🔌 **高度可扩展**：技能系统 + 插件系统，无限可能
 
 ---
 
 ## ✨ 特性
 
-- 🚀 **零依赖**：纯 Win32 API 实现，不依赖任何第三方库
-- 💻 **超轻量**：单文件 exe，体积仅 ~250KB
-- 🎨 **Hacker 风格**：终端彩色输出，酷炫界面
-- 🔒 **权限分级**：0-10 级权限控制，安全可控
-- 🖱️ **GUI 模拟**：支持鼠标点击、键盘输入、截图等操作
-- 📦 **技能系统**：可扩展的技能插件机制，内置 5 个实用技能
-- 💾 **上下文管理**：内存存储，支持 JSON 导入导出
-- ⚙️ **交互式设置**：终端设置面板，方向键操作
-- 🌐 **云端 AI**：支持 OpenAI 兼容 API
-- 🧠 **本地推理**：GGUF 格式本地大模型支持（框架）
-- 👁️ **OCR 识图**：Windows 内置 OCR 支持（框架）
-- 💻 **完整 Shell**：危险命令检测、权限检查、管道捕获输出
-- 📋 **安装向导**：5 步交互式安装流程
-- 🔌 **插件系统**：支持官方插件和用户自制插件，DLL 动态加载
-- 🗄️ **本地数据库**：轻量级键值存储，3 个数据表
+### 核心特性
+
+| 特性 | 说明 |
+|------|------|
+| **零依赖** | 纯 Win32 API 实现，不依赖任何第三方库 |
+| **超轻量** | 单文件 exe，体积仅 ~250KB |
+| **Hacker 风格** | 终端彩色输出，酷炫界面 |
+| **权限分级** | 0-10 级权限控制，安全可控 |
+| **GUI 模拟** | 支持鼠标点击、键盘输入、截图等操作 |
+| **技能系统** | 可扩展的技能插件机制，内置 6 个实用技能 |
+| **上下文管理** | 内存存储，支持 JSON 导入导出 |
+| **交互式设置** | 终端设置面板，方向键操作 |
+| **云端 AI** | 支持 OpenAI 兼容 API |
+| **本地推理** | GGUF 格式本地大模型支持（框架） |
+| **OCR 识图** | Windows 内置 OCR 支持（框架） |
+| **完整 Shell** | 危险命令检测、权限检查、管道捕获输出 |
+| **安装向导** | 5 步交互式安装流程 |
+| **插件系统** | 支持官方插件和用户自制插件，DLL 动态加载 |
+| **本地数据库** | 轻量级键值存储，3 个数据表 |
+
+### 内置技能
+
+| 技能 | 说明 |
+|------|------|
+| 📁 **文件管理** | 复制、移动、删除、重命名、批量操作 |
+| 📝 **文本处理** | grep、sed、sort、uniq、wc、编码转换 |
+| 🖥️ **系统监控** | CPU、内存、磁盘、进程、网络连接 |
+| 🌐 **网络工具** | ping、curl、wget、nslookup、端口扫描 |
+| 📄 **文档编辑器** | 创建、编辑、格式转换、预览 |
+| 🎯 **示例技能** | 技能开发模板和示例 |
 
 ---
 
@@ -30,19 +68,19 @@
 
 ```
 hacker-terminal-native/
-├── src/                    # 源代码
-│   ├── hacker.h           # 主头文件
+├── src/                    # 源代码目录
+│   ├── hacker.h           # 主头文件（数据结构和函数声明）
 │   ├── main.c             # 主程序入口
-│   ├── utils.c            # 工具函数
-│   ├── terminal.c         # 终端界面
+│   ├── utils.c            # 工具函数库
+│   ├── terminal.c         # 终端界面渲染
 │   ├── config.c           # 配置管理
-│   ├── gui.c              # GUI 控制
-│   ├── network.c          # 网络请求
+│   ├── gui.c              # GUI 控制（鼠标、键盘、截图）
+│   ├── network.c          # 网络请求（HTTP/HTTPS）
 │   ├── skills.c           # 技能系统
-│   ├── context.c          # 上下文管理
-│   ├── ai.c               # AI 引擎
-│   ├── commands.c         # 命令系统
-│   ├── settings.c         # 设置面板
+│   ├── context.c          # 上下文管理（对话历史）
+│   ├── ai.c               # AI 引擎（云端/本地）
+│   ├── commands.c         # 命令系统（斜杠命令）
+│   ├── settings.c         # 设置面板（交互式）
 │   ├── shell.c            # Shell 命令执行引擎
 │   ├── ocr.c              # OCR 识图模块
 │   ├── ggml.c             # GGUF 本地推理引擎
@@ -50,9 +88,9 @@ hacker-terminal-native/
 │   ├── plugin.c           # 插件管理器
 │   └── installer.c        # 安装向导程序
 ├── resources/              # 资源文件
-│   └── version.rc         # 版本资源
+│   └── version.rc         # 版本资源（Windows 资源文件）
 ├── skills/                 # 技能目录
-│   ├── demo-skill/        # 示例技能
+│   ├── demo-skill/        # 示例技能（开发模板）
 │   ├── file-manager/      # 文件管理技能
 │   ├── text-processor/    # 文本处理技能
 │   ├── system-monitor/    # 系统监控技能
@@ -64,8 +102,9 @@ hacker-terminal-native/
 │   ├── user/              # 用户插件
 │   │   └── template/      # 用户插件模板
 │   └── README.md          # 插件开发指南
-├── build.bat              # 编译脚本
-└── README.md              # 说明文档
+├── build.bat              # 编译脚本（MinGW-w64）
+├── README.md              # 中文说明文档
+└── README.en.md           # 英文说明文档
 ```
 
 ---
@@ -74,16 +113,26 @@ hacker-terminal-native/
 
 ### 编译
 
-1. 安装 MinGW-w64 (x86_64-posix-seh)
-2. 运行编译脚本：
+#### 环境要求
+
+- Windows 7 及以上系统
+- MinGW-w64 (x86_64-posix-seh) 或 Visual Studio
+
+#### 使用编译脚本
 
 ```cmd
 build.bat
 ```
 
-3. 编译成功后，可执行文件在 `bin/` 目录：
-   - `HackerTerminal.exe` - 主程序
-   - `HackerInstaller.exe` - 安装向导
+编译成功后，可执行文件在 `bin/` 目录：
+- `HackerTerminal.exe` - 主程序
+- `HackerInstaller.exe` - 安装向导
+
+#### 手动编译（MinGW-w64）
+
+```bash
+gcc -O2 -Wall -mwindows -o bin/HackerTerminal.exe src/*.c -luser32 -lgdi32 -lshell32 -lwininet -lshlwapi -ladvapi32
+```
 
 ### 运行
 
@@ -109,16 +158,16 @@ HackerTerminal.exe
 
 | 命令 | 说明 |
 |------|------|
-| `/help`, `/?` | 显示帮助 |
-| `/skills` | 列出所有技能 |
+| `/help`, `/?` | 显示帮助信息 |
+| `/skills` | 列出所有可用技能 |
 | `/tools` | 列出所有工具 |
-| `/settings` | 打开设置面板 |
-| `/status` | 显示状态信息 |
-| `/permission` | 查看权限等级 |
-| `/gui` | 查看 GUI 工具 |
+| `/settings` | 打开设置面板（方向键操作） |
+| `/status` | 显示当前状态信息 |
+| `/permission` | 查看当前权限等级 |
+| `/gui` | 查看 GUI 工具列表 |
 | `/clear` | 清空对话历史 |
-| `/export <路径>` | 导出上下文为 JSON |
-| `/import <路径>` | 从 JSON 导入上下文 |
+| `/export <路径>` | 导出上下文为 JSON 文件 |
+| `/import <路径>` | 从 JSON 文件导入上下文 |
 | `/shell <命令>` | 执行 shell 命令 |
 | `/read <路径>` | 读取文件内容 |
 | `/ls [路径]` | 列出目录内容 |
@@ -129,7 +178,7 @@ HackerTerminal.exe
 | `/model <子命令>` | 本地模型管理 |
 | `/plugin <子命令>` | 插件管理 |
 | `/db <子命令>` | 数据库操作 |
-| `/run-skill <技能>` | 执行技能 |
+| `/run-skill <技能>` | 执行指定技能 |
 | `/read-skill <技能>` | 读取技能文档 |
 | `/exit` | 退出程序 |
 
@@ -195,7 +244,7 @@ HackerTerminal.exe
 ```
 
 **插件分类**：
-- **官方插件**：由爱折腾实验室官方开发
+- **官方插件**：由爱折腾的实验室官方开发
 - **用户插件**：由用户自行开发
 
 **插件状态**：
@@ -237,42 +286,6 @@ HackerTerminal.exe
 | `screenshot <路径>` | 截图保存 |
 | `size` | 获取屏幕大小 |
 | `drag x1 y1 x2 y2` | 拖拽 |
-
-### 内置技能
-
-#### 1. 文件管理 (file-manager)
-
-- 复制、移动、删除、重命名
-- 创建目录、查看大小
-- 批量重命名
-
-#### 2. 文本处理 (text-processor)
-
-- grep 查找、sed 替换
-- sort 排序、uniq 去重
-- wc 统计、iconv 编码转换
-- merge 合并、split 拆分
-
-#### 3. 系统监控 (system-monitor)
-
-- CPU、内存、磁盘使用
-- 进程列表、网络连接
-- 系统信息、结束进程
-- 可视化进度条显示
-
-#### 4. 网络工具 (network-tools)
-
-- ping、curl、wget
-- nslookup、portscan
-- ifconfig、tracert
-- speedtest、myip
-
-#### 5. 文档编辑器 (doc-editor)
-
-- 创建、编辑、查看文档
-- 格式转换（Markdown/HTML/CSV/JSON）
-- 合并、搜索替换、预览
-- 中文字数统计
 
 ---
 
@@ -341,11 +354,13 @@ __declspec(dllexport) BOOL ShutdownPlugin();
 ### 编译插件
 
 **MinGW-w64**：
+
 ```bash
 gcc -shared -o plugin.dll plugin.c -luser32
 ```
 
 **MSVC**：
+
 ```cmd
 cl /LD plugin.c user32.lib
 ```
@@ -362,7 +377,9 @@ cl /LD plugin.c user32.lib
 
 ---
 
-## 🛠️ 技术栈
+## 🛠️ 技术实现
+
+### 技术栈
 
 - **语言**：纯 C (C99)
 - **API**：Win32 API
@@ -372,16 +389,16 @@ cl /LD plugin.c user32.lib
 
 ### 系统 DLL 依赖
 
-- `user32.dll` - GUI 操作
-- `gdi32.dll` - 图形绘制
-- `shell32.dll` - Shell 操作
-- `wininet.dll` - 网络请求
-- `shlwapi.dll` - 路径操作
-- `advapi32.dll` - 注册表/配置
+| DLL | 说明 |
+|-----|------|
+| `user32.dll` | GUI 操作（鼠标、键盘、窗口） |
+| `gdi32.dll` | 图形绘制（截图、位图） |
+| `shell32.dll` | Shell 操作 |
+| `wininet.dll` | 网络请求（HTTP/HTTPS） |
+| `shlwapi.dll` | 路径操作 |
+| `advapi32.dll` | 注册表/配置 |
 
----
-
-## 📊 体积预估
+### 体积预估
 
 | 版本 | 体积 |
 |------|------|
@@ -393,6 +410,8 @@ cl /LD plugin.c user32.lib
 
 ## 🎯 路线图
 
+### 已完成 ✅
+
 - ✅ 完整的 shell 命令执行
 - ✅ 本地大模型推理 (GGUF) - 框架
 - ✅ 识图功能 (Windows OCR) - 框架
@@ -400,14 +419,25 @@ cl /LD plugin.c user32.lib
 - ✅ 安装向导程序
 - ✅ 插件系统（官方/用户分类）
 - ✅ 本地数据库
+
+### 开发中 ⏳
+
 - ⏳ 完整的 GGUF 推理实现
 - ⏳ ARM64 架构支持
 - ⏳ 多语言支持
 - ⏳ 更多官方插件
 
+### 未来计划 🔮
+
+- [ ] 插件市场集成
+- [ ] 技能商店
+- [ ] 主题系统
+- [ ] 脚本自动化
+- [ ] 远程控制功能
+
 ---
 
-## 📝 注意事项
+## ⚠️ 注意事项
 
 1. **安全第一**：高权限等级请谨慎使用，避免误操作
 2. **GUI 模式**：AI 运行时请勿操作鼠标键盘
@@ -420,12 +450,62 @@ cl /LD plugin.c user32.lib
 
 ---
 
+## ❓ 常见问题
+
+### Q: Hacker Terminal 和普通终端有什么区别？
+
+A: Hacker Terminal 不仅是一个终端，更是一个 AI 助手。它内置了 AI 能力，可以理解自然语言指令，自动执行复杂任务。同时它还拥有技能系统和插件系统，可以无限扩展功能。
+
+### Q: 为什么用纯 Win32 API 实现？
+
+A: 纯 Win32 API 实现意味着零第三方依赖，体积小，启动快，兼容性好。不需要安装 .NET、Python、Java 等运行时环境，下载即用。
+
+### Q: 权限等级有什么用？
+
+A: 权限等级是安全机制的核心。通过限制 AI 的操作权限，可以防止误操作或恶意指令造成的损害。你可以根据使用场景选择合适的权限等级。
+
+### Q: 如何开发自己的插件？
+
+A: 参考 `plugins/README.md` 中的开发指南。你只需要实现 4 个导出函数，编译成 DLL 即可。支持 C/C++ 等任何能编译成 DLL 的语言。
+
+### Q: 支持哪些 AI 模型？
+
+A: 云端支持所有 OpenAI 兼容的 API。本地支持 GGUF 格式的大模型（框架已实现，完整功能开发中）。
+
+---
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+### 贡献方式
+
+1. Fork 本仓库
+2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交你的更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+### 开发技能
+
+参考 `skills/demo-skill/` 中的示例，开发自己的技能包。
+
+### 开发插件
+
+参考 `plugins/README.md` 中的开发指南，开发自己的插件。
+
+---
+
 ## 📄 许可证
 
 MIT License
 
 ---
 
-## 👥 关于
+<div align="center">
 
-**爱折腾实验室 · 豆包 AI Agent Lab**
+**Made with ❤️ by 爱折腾的实验室**
+
+*专注于创造有趣且实用的技术项目*
+
+</div>
