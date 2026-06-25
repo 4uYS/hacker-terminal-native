@@ -239,6 +239,7 @@ void GetAppDir(TCHAR* buffer);
 void EnsureDirExists(LPCTSTR path);
 void IntToStr(int value, TCHAR* buffer);
 void SafeAppend(TCHAR* dest, int max_len, LPCTSTR src);
+int  JsonEscape(LPCTSTR src, TCHAR* dest, int dest_max_len);
 
 // commands.c
 BOOL HandleCommand(LPCTSTR cmd);

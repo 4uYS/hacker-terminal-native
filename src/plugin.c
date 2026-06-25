@@ -46,6 +46,7 @@ typedef struct {
 // 插件管理器
 typedef struct {
     PluginInfo* head;
+    PluginInfo* tail;   // 尾指针，加速插入
     int count;
     int official_count;
     int user_count;
@@ -156,11 +157,16 @@ static int ScanPluginDir(PluginType type) {
             if (GetFileAttributes(plugin_dll) != INVALID_FILE_ATTRIBUTES) {
                 // 创建插件信息
                 PluginInfo* plugin = (PluginInfo*)malloc(sizeof(PluginInfo));
+                if (!plugin) continue;
+                
                 ZeroMemory(plugin, sizeof(PluginInfo));
                 
-                _tcscpy(plugin->name, findData.cFileName);
-                _tcscpy(plugin->id, findData.cFileName);
-                _tcscpy(plugin->path, plugin_dll);
+                _tcsncpy(plugin->name, findData.cFileName, 63);
+                plugin->name[63] = 0;
+                _tcsncpy(plugin->id, findData.cFileName, 63);
+                plugin->id[63] = 0;
+                _tcsncpy(plugin->path, plugin_dll, MAX_PATH - 1);
+                plugin->path[MAX_PATH - 1] = 0;
                 plugin->type = type;
                 plugin->status = PLUGIN_DISABLED;
                 plugin->hModule = NULL;
@@ -171,13 +177,13 @@ static int ScanPluginDir(PluginType type) {
                 _tcscpy(plugin->author, _T("未知"));
                 _stprintf(plugin->description, _T("%s插件"), GetPluginTypeName(type));
                 
-                // 添加到列表
+                // 添加到列表（使用尾指针，O(1) 插入）
                 if (g_plugins.head == NULL) {
                     g_plugins.head = plugin;
+                    g_plugins.tail = plugin;
                 } else {
-                    PluginInfo* curr = g_plugins.head;
-                    while (curr->next) curr = (PluginInfo*)curr->next;
-                    curr->next = (struct PluginInfo*)plugin;
+                    g_plugins.tail->next = (struct PluginInfo*)plugin;
+                    g_plugins.tail = plugin;
                 }
                 
                 g_plugins.count++;
@@ -387,7 +393,7 @@ LPCTSTR GetPluginListText() {
     _stprintf(result, _T("插件列表 (共 %d 个)\n\n"), g_plugins.count);
     
     // 官方插件
-    _tcscat(result, _T("【官方插件】\n"));
+    SafeAppend(result, 8192, _T("【官方插件】\n"));
     PluginInfo* plugin = g_plugins.head;
     BOOL has_official = FALSE;
     
@@ -400,17 +406,17 @@ LPCTSTR GetPluginListText() {
                       plugin->version,
                       GetPluginStatusName(plugin->status),
                       plugin->description);
-            _tcscat(result, line);
+            SafeAppend(result, 8192, line);
         }
         plugin = (PluginInfo*)plugin->next;
     }
     
     if (!has_official) {
-        _tcscat(result, _T("  (暂无官方插件)\n"));
+        SafeAppend(result, 8192, _T("  (暂无官方插件)\n"));
     }
     
     // 用户插件
-    _tcscat(result, _T("\n【用户插件】\n"));
+    SafeAppend(result, 8192, _T("\n【用户插件】\n"));
     plugin = g_plugins.head;
     BOOL has_user = FALSE;
     
@@ -423,23 +429,23 @@ LPCTSTR GetPluginListText() {
                       plugin->version,
                       GetPluginStatusName(plugin->status),
                       plugin->description);
-            _tcscat(result, line);
+            SafeAppend(result, 8192, line);
         }
         plugin = (PluginInfo*)plugin->next;
     }
     
     if (!has_user) {
-        _tcscat(result, _T("  (暂无用户插件)\n"));
+        SafeAppend(result, 8192, _T("  (暂无用户插件)\n"));
     }
     
-    _tcscat(result, _T("\n使用 /plugin <命令> 管理插件\n"));
-    _tcscat(result, _T("  list    - 列出所有插件\n"));
-    _tcscat(result, _T("  info <id> - 查看插件详情\n"));
-    _tcscat(result, _T("  enable <id> - 启用插件\n"));
-    _tcscat(result, _T("  disable <id> - 禁用插件\n"));
-    _tcscat(result, _T("  run <id> [参数] - 执行插件\n"));
-    _tcscat(result, _T("  install <路径> - 安装插件\n"));
-    _tcscat(result, _T("  uninstall <id> - 卸载插件\n"));
+    SafeAppend(result, 8192, _T("\n使用 /plugin <命令> 管理插件\n"));
+    SafeAppend(result, 8192, _T("  list    - 列出所有插件\n"));
+    SafeAppend(result, 8192, _T("  info <id> - 查看插件详情\n"));
+    SafeAppend(result, 8192, _T("  enable <id> - 启用插件\n"));
+    SafeAppend(result, 8192, _T("  disable <id> - 禁用插件\n"));
+    SafeAppend(result, 8192, _T("  run <id> [参数] - 执行插件\n"));
+    SafeAppend(result, 8192, _T("  install <路径> - 安装插件\n"));
+    SafeAppend(result, 8192, _T("  uninstall <id> - 卸载插件\n"));
     
     return result;
 }
@@ -501,14 +507,20 @@ BOOL InstallPlugin(LPCTSTR source_path) {
         return FALSE;
     }
     
-    // 重新扫描插件
     // 简化处理：直接添加到列表
     PluginInfo* plugin = (PluginInfo*)malloc(sizeof(PluginInfo));
+    if (!plugin) {
+        return FALSE;
+    }
+    
     ZeroMemory(plugin, sizeof(PluginInfo));
     
-    _tcscpy(plugin->name, plugin_name);
-    _tcscpy(plugin->id, plugin_name);
-    _tcscpy(plugin->path, target_dll);
+    _tcsncpy(plugin->name, plugin_name, 63);
+    plugin->name[63] = 0;
+    _tcsncpy(plugin->id, plugin_name, 63);
+    plugin->id[63] = 0;
+    _tcsncpy(plugin->path, target_dll, MAX_PATH - 1);
+    plugin->path[MAX_PATH - 1] = 0;
     plugin->type = PLUGIN_USER;
     plugin->status = PLUGIN_DISABLED;
     plugin->hModule = NULL;
@@ -518,12 +530,13 @@ BOOL InstallPlugin(LPCTSTR source_path) {
     _tcscpy(plugin->author, _T("用户"));
     _stprintf(plugin->description, _T("用户自制插件"));
     
+    // 使用尾指针 O(1) 插入
     if (g_plugins.head == NULL) {
         g_plugins.head = plugin;
+        g_plugins.tail = plugin;
     } else {
-        PluginInfo* curr = g_plugins.head;
-        while (curr->next) curr = (PluginInfo*)curr->next;
-        curr->next = (struct PluginInfo*)plugin;
+        g_plugins.tail->next = (struct PluginInfo*)plugin;
+        g_plugins.tail = plugin;
     }
     
     g_plugins.count++;
@@ -566,6 +579,11 @@ BOOL UninstallPlugin(LPCTSTR id) {
                 prev->next = curr->next;
             } else {
                 g_plugins.head = (PluginInfo*)curr->next;
+            }
+            
+            // 更新尾指针
+            if (g_plugins.tail == plugin) {
+                g_plugins.tail = prev;
             }
             
             if (plugin->type == PLUGIN_OFFICIAL) {
@@ -633,6 +651,7 @@ void ShutdownPlugins() {
     }
     
     g_plugins.head = NULL;
+    g_plugins.tail = NULL;
     g_plugins.count = 0;
     g_plugins.official_count = 0;
     g_plugins.user_count = 0;
